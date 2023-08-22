@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread>
+#include <string.h>
+#include <pthread.h>
+
+#define NUM_THREADS 5
 
 void print(char* s){
     for (int i=0; i<10; i++)
@@ -21,22 +24,34 @@ char BuscaB(char* s, int l, int r, int i){
     return -1;
 }
 
-char decipherChar(char* s, int i){
+void decipherString(char* s, char* destination){
     char minChar = 33;
     char maxChar = 126;
-    char letra = BuscaB(s, minChar, maxChar, i);
-    return letra;
+    for(int i=0; i<10;i++){
+        char letra = BuscaB(s, minChar, maxChar, i);
+        destination[i] = letra;
+    }
 }
 
 int main(){
-    pthread_t thread;
-    int rc;
-    rc = pthread_create(&thread, NULL, )
-    
     char senha[10] = "h8dc@K0!c4";
     print(senha);
-    char l = decipherChar(senha, 3);
-    printf("%c", l);
+    char password[10];
+    
+    pthread_t threads[NUM_THREADS];
+    int* taskids[NUM_THREADS];
+    
+    int rc; int t;
+    
+    for(t=0; t<NUM_THREADS; t++){
+        taskids[t] = (int*) malloc(sizeof(int));
+        *taskids[t] = t;
+        
+        rc = pthread_create(&threads[t], NULL, decipherString)
+    }
+    
+    decipherString(senha, password);
+    print(password);
 
     return 0;
 }
