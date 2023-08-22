@@ -70,13 +70,11 @@ void getpassword(){
 
 int main(){
     getpassword();
-    
     makeThreads();
     
     printf("Deciphered Password: ");
     print(password);
     
     pthread_exit(NULL);
-
     return 0;
 }
