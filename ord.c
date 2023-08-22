@@ -3,55 +3,80 @@
 #include <string.h>
 #include <pthread.h>
 
-#define NUM_THREADS 5
+int NUM_THREADS;
+char senha[10];
+char password[10];
 
 void print(char* s){
-    for (int i=0; i<10; i++)
+    for (int i=0; i<strlen(s); i++)
         printf("%c", s[i]);
     printf("\n");
 }
 /* Binary Search para decifrar o char do índice i da string */
-char BuscaB(char* s, int l, int r, int i){
+char BuscaB(int l, int r, int i){
     if(r>=l){
         char m = (l+r)/2;
-        if(m == s[i])
+        if(m == senha[i])
             return m;
-        else if(s[i] < m)
-            return BuscaB(s, l, m-1, i);
+        else if(senha[i] < m)
+            return BuscaB(l, m-1, i);
         else
-            return BuscaB(s, m+1, r, i);
+            return BuscaB(m+1, r, i);
     }
     return -1;
 }
 
-void decipherString(char* s, char* destination){
+void *decipherString(void *threadID){
+    int id = *((int *)threadID);
+
     char minChar = 33;
     char maxChar = 126;
-    for(int i=0; i<10;i++){
-        char letra = BuscaB(s, minChar, maxChar, i);
-        destination[i] = letra;
+    for(int i=id; i<=10;i+=NUM_THREADS){
+        char letra = BuscaB(minChar, maxChar, i);
+        if(letra != -1){
+            password[i] = letra;
+            printf("char %d at thread %d\n", i, id);
+        }else
+            password[i] = '\0';
     }
 }
 
-int main(){
-    char senha[10] = "h8dc@K0!c4";
-    print(senha);
-    char password[10];
-    
-    pthread_t threads[NUM_THREADS];
-    int* taskids[NUM_THREADS];
-    
-    int rc; int t;
-    
-    for(t=0; t<NUM_THREADS; t++){
-        taskids[t] = (int*) malloc(sizeof(int));
+void makeThreads(){
+     pthread_t threads[NUM_THREADS];
+    int *taskids[NUM_THREADS];
+
+    int rc;   int t;   
+  
+    for(t=0; t<NUM_THREADS; t++){      
+        taskids[t] = (int *) malloc(sizeof(int)); 
         *taskids[t] = t;
-        
-        rc = pthread_create(&threads[t], NULL, decipherString)
-    }
+        rc = pthread_create(&threads[t], NULL, decipherString, (void *) taskids[t]);      
+        if (rc){         
+        printf("ERRO; código de retorno é %d\n", rc);         
+        exit(-1); 
+        }
+    }   
     
-    decipherString(senha, password);
+    for(int i=0; i<NUM_THREADS; i++)
+        pthread_join(threads[i], NULL);
+}
+
+void getpassword(){
+    printf("Number of threads: ");
+    scanf("%d", &NUM_THREADS);
+    printf("Password (max: 10 characters): ");
+    scanf("%s", senha);
+}
+
+int main(){
+    getpassword();
+    
+    makeThreads();
+    
+    printf("Deciphered Password: ");
     print(password);
+    
+    pthread_exit(NULL);
 
     return 0;
 }
