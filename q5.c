@@ -5,48 +5,83 @@
 #define true 1 
 #define false 0
 
-void printArr(int* arr, int size){
+int NUM_THREADS;
+int N;
+int* primeNumbers;
+
+void printArr(){
     
-    printf("Prime numbers under %d : ", size);
+    printf("Prime numbers under %d : ", N);
     
-    for(int i=0; i<size; i++){
-        if(arr[i] != 0)
+    for(int i=0; i<N; i++){
+        if(primeNumbers[i] > 1)
             printf("%d ", i);
     }
     printf("\n");
 }
 
-void print(int* arr, int size){
-    for(int i=0; i<size; i++){
-        printf("%d ", arr[i]);
+void print(){
+    for(int i=0; i<N; i++){
+        printf("%d ", primeNumbers[i]);
     }
 }
 
-void crivo(int* arr, int size){
-    for(int i=0; i<size; i++){
-        if(arr[i]==true){
-            for(int j=i+1; j<size; j++){
-                if( arr[j] && (j % i == 0))
-                    arr[j] -= 1;
+void* crivo(void *threadID){
+    int id = *((int *)threadID);
+    for(int i= id+2; i<N; i++){
+        //if((i%2 != 0 || i==2) && (i%5 != 0)){
+            if(primeNumbers[i]==true){
+                primeNumbers[i]++;
+                printf("Number %d at thread %d\n", i, id);
+                for(int j=i+1; j<N; j++){
+                    primeNumbers[j] -= 1;
+                    if( primeNumbers[j] == 0 && (j % i == 0))
+                        primeNumbers[j] -= 1;
+                    primeNumbers[j] += 1;
+                }
             }
-        }
+        //}
     }
+}
+
+void makeThreads(){
+    pthread_t threads[NUM_THREADS];
+    int *taskids[NUM_THREADS];
+
+    int rc;   int t;   
+  
+    for(t=0; t<NUM_THREADS; t++){      
+        taskids[t] = (int *) malloc(sizeof(int)); 
+        *taskids[t] = t;
+        rc = pthread_create(&threads[t], NULL, crivo, (void *) taskids[t]);      
+        if (rc){         
+            printf("ERRO; código de retorno é %d\n", rc);         
+            exit(-1); 
+        }
+    }   
+    
+    for(int i=0; i<NUM_THREADS; i++)
+        pthread_join(threads[i], NULL);
 }
 
 int main(){
-    int n;
     printf("Insert a natural number: ");
-    scanf("%d", &n);
-    int array[n];
-    if(n<=1){
-        array[0] = false;
-        array[1] = false;
+    scanf("%d", &N);
+    primeNumbers = (int*) malloc(N * sizeof(int));
+    if(N<=1){
+        primeNumbers[0] = false;
+        primeNumbers[1] = false;
     }
-    for(int i=2; i<n; i++)
-        array[i] = true;
+    for(int i=2; i<N; i++){
+        primeNumbers[i] = true;
+    }
+    printf("Number of threads: ");
+    scanf("%d", &NUM_THREADS);
         
-    crivo(array, n);
+    makeThreads();
         
-    printArr(array, n);
-    print(array, n);
+    printArr();
+    print();
+    pthread_exit(NULL);
+    free(primeNumbers);
 }
